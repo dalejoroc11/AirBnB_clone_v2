@@ -1,49 +1,73 @@
 #!/usr/bin/python3
-"""
-Script that starts a Flask web application:
-Your web application must be listening on 0.0.0.0, port 5000
-You must use storage for fetching data from the storage engine
-(FileStorage or DBStorage) => from models import storage and storage.all(...)
-After each request you must remove the current SQLAlchemy Session:
-    Declare a method to handle @app.teardown_appcontext
-    Call in this method storage.close()
-Routes:
-    /states_list: display a HTML page: (inside the tag BODY)
-        H1 tag: “States”
-        UL tag: with the list of all State objects present in DBStorage
-        sorted by name (A->Z) tip
-            LI tag: description of one State: <state.id>: <B><state.name></B>
-You must use the option strict_slashes=False in your route definition
+"""Starts a Flask web application
 """
 from flask import Flask
 from flask import render_template
 from models import storage
 from models.state import State
 
-app = Flask(__name__)
-app.url_map.strict_slashes = False
+if __name__ == '__main__':
+    app = Flask(__name__)
 
+    @app.route('/', strict_slashes=False)
+    def index():
+        """Display 'Hello HBNB!'
+        """
+        return 'Hello HBNB!'
 
-@app.route("/states_list")
-def states_list():
-    """
-    Return a HTML page: (inside the tag BODY)
-        H1 tag: “States”
-        UL tag: with the list of all State objects present in DBStorage
-        sorted by name (A->Z)
-            LI tag: description of one State: <state.id>: <B><state.name></B>
-    """
-    states = storage.all(State)
-    return render_template("7-states_list.html", states=states)
+    @app.route('/hbnb', strict_slashes=False)
+    def hbnb():
+        """Display 'HBNB'
+        """
+        return 'HBNB'
 
+    @app.route('/c/<text>', strict_slashes=False)
+    def c(text):
+        """Display “C ” followed by the value of
+        the text variable (replace underscore _
+        symbols with a space)
+        """
+        return 'C ' + text.replace('_', ' ')
 
-@app.teardown_appcontext
-def teardown(exc):
-    """
-    Close database or file storage
-    """
-    storage.close()
+    @app.route('/python/')
+    @app.route('/python/<text>', strict_slashes=False)
+    def python(text="is cool"):
+        """Display “Python ”, followed by the value of
+        the text variable (replace underscore _
+        symbols with a space )
+        """
+        return 'Python ' + text.replace('_', ' ')
 
+    @app.route('/number/<int:n>', strict_slashes=False)
+    def number(n):
+        """Display “n is a number” only if n is an integer
+        """
+        return str(n) + ' is a number'
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    @app.route('/number_template/<int:n>', strict_slashes=False)
+    def number_template(n):
+        """Display a HTML page only if n is an integer
+        """
+        return render_template('5-number.html', n=n)
+
+    @app.route('/number_odd_or_even/<int:n>', strict_slashes=False)
+    def number_odd_or_even(n):
+        """Display a HTML page only if n is an integer
+        """
+        parity = 'even' if n % 2 == 0 else 'odd'
+        return render_template('6-number_odd_or_even.html', n=n, parity=parity)
+
+    @app.route('/states_list', strict_slashes=False)
+    def states_list():
+        """Display a HTML page of the States
+        """
+        states = storage.all(State).values()
+        return render_template('7-states_list.html', states=states)
+
+    @app.teardown_appcontext
+    def teardown_db(error):
+        """Closes the database again at the end of the request.
+        """
+        storage.close()
+
+    app.run('0.0.0.0')
